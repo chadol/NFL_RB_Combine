@@ -1,11 +1,7 @@
+library(dplyr)
 library(XML)
 
-
-
 combine = NULL
-
-
-
 for(year in 2002:2014){
   url = paste("http://nflcombineresults.com/nflcombinedata.php?year=",
               year, "&pos=RB&college=", sep="")

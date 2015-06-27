@@ -3,6 +3,12 @@ library(randomForest)
 library(ggplot2)
 library(caret)
 
+#kasjdfpiwefjf2f9j23p-2jf blahblahblah
+
+setwd("C:/Users/Will/Documents/GitHub/NFL_RB_Combine")
+
+load("data.rdata")
+
 
 temp = select(merge_data, forty:cone)
 apply(temp, 2, function(x) sum(is.na(x))/length(x))
@@ -14,8 +20,7 @@ for(i in 1:nrow(temp)){
   num_missing[i] = sum(is.na(temp[i,]))  
 }  
 
-table(num_missing)
-
+table(num_missing)/nrow(merge_data)
 
 temp = select(merge_data, height:cone)
 
@@ -25,6 +30,16 @@ temp2 = mice(temp, m=10, maxit=20, seed=1, printFlag=T)
 temp3 = complete(temp2)
 
 impute_data = cbind(select(merge_data,Name:Year), temp3)
+
+
+
+
+merge_data[order(-merge_data$ry),][1:20,]
+merge_data[order(-merge_data$scrim),][1:20,]
+merge_data[order(-merge_data$fpoints),][1:10,]
+
+
+
 
 
 blah=lm(fpoints ~ height+weight+forty+bench+vert+broad+shuttle+cone, data=impute_data)
@@ -48,6 +63,8 @@ blah2[order(blah2$diff),][1:10,]
 blah2[order(-blah2$diff),][1:10,]
 
 
+asdf="asdf"
+a=0
 
 
 
@@ -64,3 +81,5 @@ qplot(shuttle,fpoints,data=impute_data,geom=c("point","smooth"))
 
 qplot(cone,fpoints,data=impute_data,geom=c("point","smooth"))
 
+
+multiplot(p1, p2, p3, p4, cols=2)
