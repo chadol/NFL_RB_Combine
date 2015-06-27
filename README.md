@@ -1,0 +1,3 @@
+# NFL_RB_Combine
+
+I analyze the relation between a running back's performance in the NFL scouting combine (https://en.wikipedia.org/wiki/NFL_scouting_combine) and subsequent performance in the NFL for the first four years of a players career, for players drafted from 2002-2011. The physical tests of the scouting combine consists of six events: 40 yard dash, bench press (225 lbs repetitions), vertical jump, broad jump, 20 yard shuttle, and 3 cone drill. These events are designed to measure, among other things, a player's speed, strength, explosiveness, and agility, and are expected to correlate with a player's success in a league.
