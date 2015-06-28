@@ -1,31 +1,30 @@
 library(dplyr)
 library(XML)
 
+setwd("C:/Users/Me/Documents/GitHub/NFL_RB_Combine")
+
+### Download combine results from http://nflcombineresults.com ###
 combine = NULL
 for(year in 2002:2014){
   url = paste("http://nflcombineresults.com/nflcombinedata.php?year=",
-              year, "&pos=RB&college=", sep="")
-  
+              year, "&pos=RB&college=", sep="")  
   temp = readHTMLTable(url)
-  temp = temp[["NULL"]]
-  
-  combine = rbind(combine, temp)
-  
+  temp = temp[["NULL"]]  
+  combine = rbind(combine, temp) 
 }
-
+table(combine$Year) # Check all years downloaded
 
 combine_data = select(combine, -College, -POS, -Wonderlic)
-
 names(combine_data) = c('Year','Name','height','weight','forty','bench','vert','broad','shuttle','cone')
 combine_data$Name = as.character(combine_data$Name)
 combine_data$Name[129] = "Adrian Peterson2"
 combine_data[,3:10] = apply(combine_data[,3:10],2, function(x) as.numeric(gsub("[*]","",x) ))
 
-# lesean mccoy
+# Lesean Mccoy
 temp = c(2009, "Lesean McCoy", 70, 204, 4.45, 17, 29, 107, 4.18, 6.82)
-
 combine_data = rbind(combine_data, temp)
-
+combine_data$Year = as.numeric(as.character(combine_data$Year))
+combine_data[,c(3:10)] = apply(combine_data[,c(3:10)], 2, as.numeric)
 
 
 ### Extract all names from combine data ###
@@ -33,27 +32,25 @@ combine_data = rbind(combine_data, temp)
 temp = combine_data
 temp$Year = as.numeric(as.character(temp$Year))
 temp = filter(temp, Year<=2011)
-
 temp$Name = gsub("[-']", "", temp$Name)  
-
 rb_names = strsplit(as.character(temp$Name), " ")
 rb_names = data.frame(do.call(rbind, rb_names))
-
 names(rb_names) = c("fname", "lname")
-
-blah=rb_names
-
-
 rb_names$l_first = substr(rb_names$lname, 1, 1)
 rb_names$url_name = paste(substr(rb_names$lname, 1, 4), substr(rb_names$fname, 1, 2), sep="")
-
 rb_names = rb_names[order(rb_names$lname),]
+rb_names = filter(rb_names, lname!='Peterson2') # Distinguish the 2 Adrian Petersons
 
 
-missing = matrix(0, 0, 2) # Players for whom data was not retrieved
-data_names  = matrix(0, 0, 2)
-data_stat = matrix(0, 0, 5)
+### scrap data from http://www.pro-football-reference.com/ ###
 
+missing = matrix(0,0,2) # Players for whom data was not retrieved
+data_names  = matrix(0,0,2)
+data_stat = matrix(0,0,5)
+##################
+#
+#
+##################
 for (i in 1:nrow(rb_names)){
   j=0
   k=0
@@ -112,23 +109,16 @@ temp = temp$rushing_and_receiving
 num_rows = min(nrow(temp), 4)
 temp = temp[1:num_rows,]
 temp = temp[,c(9,10,17,19,25)]
-temp = apply(temp, 2, function(x) sum(as.numeric(x)))
-stat[73, 3:7] = temp
-stat$lname[73] = 'Peterson2'
+temp = c(0,0,apply(temp, 2, function(x) sum(as.numeric(x))))
+stat = rbind(stat, temp)
+stat[nrow(stat), c(1,2)] = c("Adrian", "Peterson2")
 
-# Fantasy Points, rush+pass yards
+# Fantasy Points, yards from line of scrimmage, tot td
 stat = mutate(stat, fpoints = ry*.1 + tdr*6 + recy*.1 + tdre*6 - fuml*2,
-              scrim = ry+recy)
+              scrim = ry+recy,
+              tot_td = tdr+tdre)
 
-
-# Top Players
-stat[order(-stat$ry),][1:10,]
-stat[order(-stat$scrim),][1:10,]
-stat[order(-stat$fpoints),][1:10,]
-
-
-##### Merge combine data and stats
-
+### Merge combine data and stats ###
 stat$Name = paste(stat$fname, stat$lname)
 merge_data = merge(stat, combine_data, by="Name")
 save(merge_data, file="data.rdata")
