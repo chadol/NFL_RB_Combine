@@ -53,8 +53,13 @@ multiplot(temp1, temp2, temp3, temp4, cols=2)
 ### Linear Regression ###
 lm_fit = lm(fpoints ~ height+weight+forty+bench+vert+broad+shuttle+cone, data=impute_data)
 summary(lm_fit)
+pred_rb = predict(lm_fit)
+pred_rb = data.frame(pred_rb, impute_data$Name, impute_data$fpoints)
+pred_rb = mutate(pred_rb, diff = impute_data.fpoints - pred_rb)
+pred_rb[order(pred_rb$diff),][1:5,]
+pred_rb[order(-pred_rb$diff),][1:5,]
 
-### Random Forest ###
+### Random Forest ### Overfitting concerns?
 set.seed(1)
 rfgrid <- expand.grid(.mtry=c(1: 8))
 traincontrol <- trainControl(method='repeatedcv', number=3, repeats=10)
@@ -87,13 +92,11 @@ temp = rbind(select(comb2015,height:cone), select(merge_data,height:cone))
 temp = select(temp, height:cone)
 temp2 = mice(temp, m=20, maxit=30, seed=1, printFlag=T)
 temp3 = complete(temp2)
-
 comb2015_imp = cbind(select(comb2015,Name:Year), temp3[1:nrow(comb2015),])
 
-
 pred_rb = predict(rf_fit, comb2015_imp)
-pred_rb = data.frame(comb2015_imp$Name, pred_rb)
+pred_rb = data.frame(comb2015_imp, pred_rb)
 pred_rb[order(-pred_rb$pred_rb),][1:5,]
-pred_rb[order(pred_rb$pred_rb),][1:3,]
+pred_rb[order(pred_rb$pred_rb),][1:5,]
 
 

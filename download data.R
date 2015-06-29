@@ -1,3 +1,7 @@
+### Note: two notable players are handled in an ad-hoc fashion -
+### Lesean Mccoy is missing from the combine database, and there are
+### 2 Adrian Petersons that were RBs in the 2000's
+
 library(dplyr)
 library(XML)
 
@@ -20,15 +24,13 @@ combine_data$Name = as.character(combine_data$Name)
 combine_data$Name[129] = "Adrian Peterson2"
 combine_data[,3:10] = apply(combine_data[,3:10],2, function(x) as.numeric(gsub("[*]","",x) ))
 
-# Lesean Mccoy
+# Manually add Lesean Mccoy
 temp = c(2009, "Lesean McCoy", 70, 204, 4.45, 17, 29, 107, 4.18, 6.82)
 combine_data = rbind(combine_data, temp)
 combine_data$Year = as.numeric(as.character(combine_data$Year))
 combine_data[,c(3:10)] = apply(combine_data[,c(3:10)], 2, as.numeric)
 
-
 ### Extract all names from combine data ###
-
 temp = combine_data
 temp$Year = as.numeric(as.character(temp$Year))
 temp = filter(temp, Year<=2011)
@@ -41,22 +43,21 @@ rb_names$url_name = paste(substr(rb_names$lname, 1, 4), substr(rb_names$fname, 1
 rb_names = rb_names[order(rb_names$lname),]
 rb_names = filter(rb_names, lname!='Peterson2') # Distinguish the 2 Adrian Petersons
 
-
-### scrap data from http://www.pro-football-reference.com/ ###
-
+### scrap data from http://www.pro-football-reference.com ###
 missing = matrix(0,0,2) # Players for whom data was not retrieved
 data_names  = matrix(0,0,2)
 data_stat = matrix(0,0,5)
+
 ##################
-#
-#
+# Loop to read data 
+# Each players url includes X/YyyyZzNN, where X: first letter of lname,
+# Yyyy: first 4 letters of lname, Zz: first 2 letters of fname, 
+# NN: 00 if first player to have this identifier, 01, 02 if second, third...
 ##################
 for (i in 1:nrow(rb_names)){
   j=0
-  k=0
-  
-  while(j!=10){
-  
+  k=0 
+  while(j!=10){  
     url = paste("http://www.pro-football-reference.com/players/", rb_names$l_first[i], "/", 
                 rb_names$url_name[i], "0", j,".htm", sep="")  
     temp = readHTMLTable(url)
@@ -72,27 +73,19 @@ for (i in 1:nrow(rb_names)){
       # Check if right time frame and pos == RB
       temp2 = as.character(temp$Year)
       temp2 = as.numeric(gsub("[^0-9]" , "", temp2))
-      rb = length(intersect(c("RB","rb"), unique(temp$Pos)))
-      
+      rb = length(intersect(c("RB","rb"), unique(temp$Pos)))      
       if(min(temp2)<2002 | rb==0) {j=j+1 # wrong player, keep looping
       } else j=10 # successfully found data - terminate while loop
     }
-  
   }
-  
   if(k==1) {next  #while loop terminated because no data
   } else{
-
     # stats
     num_rows = min(nrow(temp), 4)
-    temp = temp[1:num_rows,]
-    
-    temp = temp[,c(9,10,17,19,25)]
-    
-    temp = apply(temp, 2, function(x) sum(as.numeric(x)))
-    
-    temp[is.na(temp)] = 0
-    
+    temp = temp[1:num_rows,]    
+    temp = temp[,c(9,10,17,19,25)]    
+    temp = apply(temp, 2, function(x) sum(as.numeric(x)))    
+    temp[is.na(temp)] = 0    
     data_names = rbind(data_names, rb_names[i, 1:2])
     data_stat = rbind(data_stat, temp)        
   }
