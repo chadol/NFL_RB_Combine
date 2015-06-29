@@ -4,12 +4,14 @@ library(ggplot2)
 library(caret)
 library(dplyr)
 library(XML)
+library(MASS)
 
 setwd("C:/Users/Me/Documents/GitHub/NFL_RB_Combine")
 load("data.rdata")
+source("multiplot.r") 
 
 ### Preliminary Analysis ###
-temp = select(merge_data, forty:cone)
+temp = dplyr::select(merge_data, forty:cone)
 apply(temp, 2, function(x) sum(is.na(x))/length(x))
 
 # number of draft stats running back has 
@@ -23,14 +25,13 @@ table(num_missing)/nrow(merge_data)
 merge_data[order(-merge_data$ry),][1:20,]
 merge_data[order(-merge_data$scrim),][1:20,]
 merge_data[order(-merge_data$fpoints),][1:10,]
-select(merge_data[order(-merge_data$fpoints),][1:10,], fname:lname, fpoints, scrim, tot_td)
-
+dplyr::select(merge_data[order(-merge_data$fpoints),][1:10,], fname:lname, fpoints, scrim, tot_td)
 
 ### Impute missing combine data ###
-temp = select(merge_data, height:cone)
+temp = dplyr::select(merge_data, height:cone)
 temp2 = mice(temp, m=20, maxit=30, seed=1, printFlag=T)
 temp3 = complete(temp2)
-impute_data = cbind(select(merge_data,Name:Year), temp3)
+impute_data = cbind(dplyr::select(merge_data,Name:Year), temp3)
 
 ### Plots ###
 plot_arg = list(geom_point(alpha=I(.7),size=4,shape=19), 
@@ -64,7 +65,7 @@ set.seed(1)
 rfgrid <- expand.grid(.mtry=c(1: 8))
 traincontrol <- trainControl(method='repeatedcv', number=3, repeats=10)
 
-X = select(impute_data, height:cone)
+X = dplyr::select(impute_data, height:cone)
 rf_fit = train(x=X, y=impute_data$fpoints, method="rf", trControl=traincontrol, 
                metric="RMSE", tuneGrid=rfgrid)
 
@@ -78,21 +79,20 @@ pred_rb[order(-pred_rb$diff),][1:5,]
 ### 2015 Rookies ###
 temp = readHTMLTable("http://nflcombineresults.com/nflcombinedata.php?year=2015&pos=RB&college=")  
 temp = temp[["NULL"]]  
-comb2015 = select(temp, -College, -POS, -Wonderlic)
+comb2015 = dplyr::select(temp, -College, -POS, -Wonderlic)
 names(comb2015) = c('Year','Name','height','weight','forty','bench','vert','broad','shuttle','cone')
-
 comb2015[,1:2] = apply(comb2015[,1:2],2, as.character)
 comb2015[,3:10] = apply(comb2015[,3:10],2, function(x) as.numeric(gsub("[*]","",x) ))
 
 # Select only players that participate in at least 4 events
-temp = apply(select(comb2015, forty:cone), 1, function(x) sum(!is.na(x))) >= 4
+temp = apply(dplyr::select(comb2015, forty:cone), 1, function(x) sum(!is.na(x))) >= 4
 comb2015 = comb2015[temp,]
 # Impute missing
-temp = rbind(select(comb2015,height:cone), select(merge_data,height:cone))
-temp = select(temp, height:cone)
+temp = rbind(dplyr::select(comb2015,height:cone), dplyr::select(merge_data,height:cone))
+temp = dplyr::select(temp, height:cone)
 temp2 = mice(temp, m=20, maxit=30, seed=1, printFlag=T)
 temp3 = complete(temp2)
-comb2015_imp = cbind(select(comb2015,Name:Year), temp3[1:nrow(comb2015),])
+comb2015_imp = cbind(dplyr::select(comb2015,Name:Year), temp3[1:nrow(comb2015),])
 
 pred_rb = predict(rf_fit, comb2015_imp)
 pred_rb = data.frame(comb2015_imp, pred_rb)
